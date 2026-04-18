@@ -1,0 +1,6 @@
+[
+  { "pack_id": 1, "name": "Crystal x60",   "crystal": 60,   "price_gold": 35 },
+  { "pack_id": 2, "name": "Crystal x300",  "crystal": 300,  "price_gold": 179 },
+  { "pack_id": 3, "name": "Crystal x980",  "crystal": 980,  "price_gold": 549 },
+  { "pack_id": 4, "name": "Crystal x1980", "crystal": 1980, "price_gold": 1100 }
+]
