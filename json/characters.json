@@ -2,31 +2,61 @@
   {
     "char_id": 1,
     "char_name": "Makima",
+    "rarity_id": 5,
+    "element_id": 1,
     "hp": 150,
     "atk": 18,
     "move_speed": 6.0,
-    "fire_interval": 0.35,
+    "fire_interval": 0.8,
     "magnet": 1.0,
     "area": 1.2
   },
   {
     "char_id": 2,
     "char_name": "Reze",
+    "rarity_id": 5,
+    "element_id": 2,
     "hp": 110,
     "atk": 17,
     "move_speed": 7.0,
-    "fire_interval": 0.28,
+    "fire_interval": 0.6,
     "magnet": 0.8,
     "area": 1.1
   },
   {
     "char_id": 3,
     "char_name": "Power",
+    "rarity_id": 4,
+    "element_id": 3,
     "hp": 120,
     "atk": 15,
     "move_speed": 6.5,
-    "fire_interval": 0.32,
+    "fire_interval": 0.7,
     "magnet": 1.0,
     "area": 1.0
+  },
+  {
+    "char_id": 4,
+    "char_name": "Kobeni",
+    "rarity_id": 4,
+    "element_id": 1,
+    "hp": 100,
+    "atk": 13,
+    "move_speed": 7.5,
+    "fire_interval": 0.6,
+    "magnet": 1.2,
+    "area": 1.0
+  },
+  {
+    "char_id": 5,
+    "char_name": "Angel",
+    "rarity_id": 3,
+    "element_id": 3,
+    "hp": 90,
+    "atk": 11,
+    "move_speed": 6.2,
+    "fire_interval": 0.8,
+    "magnet": 1.5,
+    "area": 1.3
   }
 ]
