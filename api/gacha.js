@@ -8,21 +8,56 @@ function nowString() {
   return new Date().toISOString()
 }
 
+function toInt(value, defaultValue = 0) {
+  const number = parseInt(value)
+  return Number.isNaN(number) ? defaultValue : number
+}
+
 async function getCharacter(charId) {
   return await mongo.findOne('characters', {
     char_id: charId
   })
 }
 
+async function getBanner(gachaId) {
+  return await mongo.findOne('gacha_banners', {
+    gacha_id: gachaId
+  })
+}
+
+async function getPityLimit(gachaId) {
+  const banner = await getBanner(gachaId)
+  return banner ? Number(banner.pity_limit || 80) : 80
+}
+
 async function getPity(playerId, gachaId) {
-  const pity = await mongo.findOne('gacha_pity', {
+  const pityLimit = await getPityLimit(gachaId)
+
+  const pityDoc = await mongo.findOne('gacha_pity', {
     player_id: playerId,
     gacha_id: gachaId
   })
 
-  if (!pity) return 0
+  if (!pityDoc) {
+    await setPity(playerId, gachaId, 0)
+    return 0
+  }
 
-  return pity.pity || 0
+  let pity = Number(pityDoc.pity || 0)
+
+  if (pity < 0) {
+    pity = 0
+    await setPity(playerId, gachaId, pity)
+  }
+
+  // ถ้าค่า pity ค้างเป็น 80 หรือเกิน 80 ให้ reset
+  // เพราะระบบ rollOne จะ reset เป็น 0 หลังได้การันตีอยู่แล้ว
+  if (pity >= pityLimit) {
+    pity = 0
+    await setPity(playerId, gachaId, pity)
+  }
+
+  return pity
 }
 
 async function setPity(playerId, gachaId, pityValue) {
@@ -97,15 +132,13 @@ async function logGacha(playerId, gachaId, charId, rarityId, isGuaranteed) {
 }
 
 async function rollOne(playerId, gachaId) {
-  const banner = await mongo.findOne('gacha_banners', {
-    gacha_id: gachaId
-  })
+  const banner = await getBanner(gachaId)
 
   if (!banner) {
     throw new Error('Banner not found: ' + gachaId)
   }
 
-  const pityLimit = banner.pity_limit || 80
+  const pityLimit = Number(banner.pity_limit || 80)
   const guaranteedCharId = banner.guaranteed_char_id
 
   let pity = await getPity(playerId, gachaId)
@@ -178,9 +211,9 @@ async function rollOne(playerId, gachaId) {
 }
 
 async function onPull(resp, body) {
-  const playerId = parseInt(body.player_id || 1)
-  const gachaId = parseInt(body.gacha_id || 1)
-  const count = parseInt(body.count || 1)
+  const playerId = toInt(body.player_id, 1)
+  const gachaId = toInt(body.gacha_id, 1)
+  const count = toInt(body.count, 1)
 
   const costSingle = 160
   const costTen = 1600
@@ -201,7 +234,7 @@ async function onPull(resp, body) {
     return
   }
 
-  const crystalNow = player.crystal || 0
+  const crystalNow = Number(player.crystal || 0)
 
   if (crystalNow < cost) {
     writeJson(resp, {
@@ -235,11 +268,7 @@ async function onPull(resp, body) {
   })
 
   const currentPity = await getPity(playerId, gachaId)
-  const banner = await mongo.findOne('gacha_banners', {
-    gacha_id: gachaId
-  })
-
-  const pityLimit = banner ? banner.pity_limit || 80 : 80
+  const pityLimit = await getPityLimit(gachaId)
 
   writeJson(resp, {
     success: true,
@@ -255,7 +284,7 @@ async function onPull(resp, body) {
       },
       pity: {
         current: currentPity,
-        left: pityLimit - currentPity,
+        left: Math.max(0, pityLimit - currentPity),
         limit: pityLimit
       },
       results: results
@@ -265,7 +294,7 @@ async function onPull(resp, body) {
 
 async function onHistory(resp, req) {
   const url = new URL(req.url, 'http://localhost')
-  const playerId = parseInt(url.searchParams.get('player_id') || '1')
+  const playerId = toInt(url.searchParams.get('player_id'), 1)
 
   const logs = await mongo.find('gacha_log', {
     player_id: playerId
@@ -296,7 +325,30 @@ async function onHistory(resp, req) {
   })
 }
 
+async function onPity(resp, req) {
+  const url = new URL(req.url, 'http://localhost')
+
+  const playerId = toInt(url.searchParams.get('player_id'), 1)
+  const gachaId = toInt(url.searchParams.get('gacha_id'), 1)
+
+  const pityLimit = await getPityLimit(gachaId)
+  const currentPity = await getPity(playerId, gachaId)
+  const left = Math.max(0, pityLimit - currentPity)
+
+  writeJson(resp, {
+    success: true,
+    data: {
+      player_id: playerId,
+      gacha_id: gachaId,
+      current: currentPity,
+      left: left,
+      limit: pityLimit
+    }
+  })
+}
+
 module.exports = {
   onPull,
-  onHistory
+  onHistory,
+  onPity
 }

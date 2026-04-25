@@ -98,6 +98,9 @@ async function onClientRequest(req, resp) {
     else if (req.method === 'GET' && pathname === '/api/gacha/history') {
       await apiGacha.onHistory(resp, req)
     }
+    else if (req.method === 'GET' && pathname === '/api/gacha/pity') {
+      await apiGacha.onPity(resp, req)
+    }
 
     // -------------------------
     // Default

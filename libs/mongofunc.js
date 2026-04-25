@@ -1,7 +1,7 @@
 const { MongoClient } = require('mongodb')
 
 const uri = process.env.MONGO_URI
-const dbName = process.env.MONGO_DB_NAME || 'chainsaw_game'
+const dbName = process.env.MONGO_DB_NAME || 'ChainsawGame'
 
 if (!uri) {
   throw new Error('MONGO_URI is not set')
