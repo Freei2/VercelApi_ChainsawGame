@@ -13,35 +13,32 @@ function cleanMongoDoc(doc) {
   return clean
 }
 
-function parseIntOrDefault(value, defaultValue) {
+function toInt(value, defaultValue = null) {
   const number = parseInt(value)
-
-  if (Number.isNaN(number)) return defaultValue
-
-  return number
+  return Number.isNaN(number) ? defaultValue : number
 }
 
 // GET /api/shop/list
 async function onRequestShopList(resp) {
   const packs = await mongo.find('shop_crystal', {})
 
-  const cleanPacks = packs
+  const result = packs
     .map(cleanMongoDoc)
-    .sort((a, b) => a.pack_id - b.pack_id)
+    .sort((a, b) => Number(a.pack_id || 0) - Number(b.pack_id || 0))
 
   writeJson(resp, {
     success: true,
-    count: cleanPacks.length,
-    data: cleanPacks
+    count: result.length,
+    data: result
   })
 }
 
 // GET /api/shop/pack?pack_id=1
 async function onRequestShopPack(resp, req) {
   const url = new URL(req.url, 'http://localhost')
-  const packId = parseIntOrDefault(url.searchParams.get('pack_id'), 0)
+  const packId = toInt(url.searchParams.get('pack_id'))
 
-  if (packId <= 0) {
+  if (packId === null) {
     writeJson(resp, {
       success: false,
       message: 'pack_id is required'
@@ -71,10 +68,10 @@ async function onRequestShopPack(resp, req) {
 // POST /api/shop/buy
 // body: { "player_id": 1, "pack_id": 1 }
 async function onBuyShopPack(resp, body) {
-  const playerId = parseIntOrDefault(body.player_id, 1)
-  const packId = parseIntOrDefault(body.pack_id, 0)
+  const playerId = toInt(body.player_id, 1)
+  const packId = toInt(body.pack_id)
 
-  if (packId <= 0) {
+  if (packId === null) {
     writeJson(resp, {
       success: false,
       message: 'pack_id is required'
@@ -116,7 +113,6 @@ async function onBuyShopPack(resp, body) {
     writeJson(resp, {
       success: false,
       message: 'Not enough gold',
-      player_id: playerId,
       gold: goldNow,
       cost: priceGold
     })

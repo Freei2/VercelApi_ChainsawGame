@@ -41,7 +41,13 @@ async function onClientRequest(req, resp) {
     'Content-Type': 'application/json',
     'Access-Control-Allow-Origin': '*',
     'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type'
+    'Access-Control-Allow-Headers': 'Content-Type',
+
+    // กัน Vercel / Browser cache ข้อมูล API เก่า
+    'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+    'Pragma': 'no-cache',
+    'Expires': '0',
+    'Surrogate-Control': 'no-store'
   })
 
   if (req.method === 'OPTIONS') {
@@ -112,14 +118,20 @@ async function onClientRequest(req, resp) {
         routes: [
           'GET /api/character/stat?char_id=1',
           'GET /api/character/list',
+          'GET /api/character/list?element_id=1',
+          'GET /api/character/list?rarity_id=5',
+
           'GET /api/shop/list',
           'GET /api/shop/pack?pack_id=1',
           'POST /api/shop/buy',
+
           'GET /api/player/currency?player_id=1',
           'GET /api/player/characters?player_id=1',
           'POST /api/player/add-currency',
+
           'POST /api/gacha/pull',
-          'GET /api/gacha/history?player_id=1'
+          'GET /api/gacha/history?player_id=1',
+          'GET /api/gacha/pity?player_id=1&gacha_id=1'
         ]
       }))
     }
@@ -136,6 +148,12 @@ async function onClientRequest(req, resp) {
   resp.end()
 }
 
-http.createServer(onClientRequest).listen(PORT, () => {
-  console.log('Server running on port ' + PORT)
-})
+// ใช้ตอนรัน local ด้วย node server.js
+if (require.main === module) {
+  http.createServer(onClientRequest).listen(PORT, () => {
+    console.log('Server running on port ' + PORT)
+  })
+}
+
+// ใช้ตอน Deploy บน Vercel
+module.exports = onClientRequest

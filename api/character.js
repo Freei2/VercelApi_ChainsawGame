@@ -13,18 +13,15 @@ function cleanMongoDoc(doc) {
   return clean
 }
 
-function parseIntOrNull(value) {
+function toInt(value, defaultValue = null) {
   const number = parseInt(value)
-
-  if (Number.isNaN(number)) return null
-
-  return number
+  return Number.isNaN(number) ? defaultValue : number
 }
 
 // GET /api/character/stat?char_id=1
 async function onRequestCharacter(resp, req) {
   const url = new URL(req.url, 'http://localhost')
-  const charId = parseIntOrNull(url.searchParams.get('char_id'))
+  const charId = toInt(url.searchParams.get('char_id'))
 
   if (charId === null) {
     writeJson(resp, {
@@ -55,9 +52,12 @@ async function onRequestCharacter(resp, req) {
 
 // GET /api/character/list
 // GET /api/character/list?element_id=1
+// GET /api/character/list?rarity_id=5
 async function onRequestCharacterList(resp, req) {
   const url = new URL(req.url, 'http://localhost')
-  const elementId = parseIntOrNull(url.searchParams.get('element_id'))
+
+  const elementId = toInt(url.searchParams.get('element_id'))
+  const rarityId = toInt(url.searchParams.get('rarity_id'))
 
   const filter = {}
 
@@ -65,16 +65,20 @@ async function onRequestCharacterList(resp, req) {
     filter.element_id = elementId
   }
 
+  if (rarityId !== null) {
+    filter.rarity_id = rarityId
+  }
+
   const characters = await mongo.find('characters', filter)
 
-  const cleanCharacters = characters
+  const result = characters
     .map(cleanMongoDoc)
-    .sort((a, b) => a.char_id - b.char_id)
+    .sort((a, b) => Number(a.char_id || 0) - Number(b.char_id || 0))
 
   writeJson(resp, {
     success: true,
-    count: cleanCharacters.length,
-    data: cleanCharacters
+    count: result.length,
+    data: result
   })
 }
 
